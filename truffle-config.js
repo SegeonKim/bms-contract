@@ -1,3 +1,9 @@
+const PrivateKeyProvider = require("@truffle/hdwallet-provider");
+ 
+const privateKey = "0xc87509a1c067bbde78beb793e6fa76530b6382a4c0241e5e4a9ec0a0f44dc0d3";
+//const privateKeyProviderMainnet = new PrivateKeyProvider(privateKey, "https://besu.chainz.network");
+//const privateKeyProviderTestnet = new PrivateKeyProvider(privateKey, "https://besutest.chainz.network");
+
 module.exports = {
   // Uncommenting the defaults below 
   // provides for an easier quick-start with Ganache.
@@ -20,6 +26,19 @@ module.exports = {
      host: "https://besutest.chainz.network",
      port: 443,
      network_id: "*"
+   },
+   // mainnet
+   besu: {
+    //provider: privateKeyProviderMainnet,
+     provider: () => new PrivateKeyProvider(privateKey, "https://besu.chainz.network"),
+     gasPrice: 0,
+     network_id: "2020"
+   },
+   // testnet
+   besuTest: {
+     //provider: privateKeyProviderTestnet,
+     provider: () => new PrivateKeyProvider(privateKey, "https://besutest.chainz.network"),
+     network_id: "2020"
    }
   }
   
