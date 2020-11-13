@@ -13,22 +13,25 @@ contract BatteryOwnershipService is Initializable, ERC721, ERC721Enumerable, ERC
     struct Battery {
         uint256 batteryId; 
         //address owner; 
-        bytes32 certificateHash;
-        uint256 certificateId; 
-        uint256 creationDt; 
+        //bytes32 certificateHash;
+        //uint256 certificateId;
+        uint256 currentCertificateId; 
         string modelName;
         string manufacturer;
         string productionDate;
-        bool isActive;
+        //bool isActive;
+        uint256 creationDt; 
     }
     
     struct Certificate {
         uint256 batteryId;
         uint256 certificateId;
+        bytes32 certificateHash;
 		string  grade;
 		string  evaluationDate;
 		string  evaluationInstitute;
 		bool    isLatest;
+		uint256 creationDt;
     }
 
     mapping(uint256 => Battery) private batteries;
@@ -93,17 +96,18 @@ contract BatteryOwnershipService is Initializable, ERC721, ERC721Enumerable, ERC
         string memory _manufacturer,
         string memory _productionDate
     ) public onlyManager {
-        require(batteries[_batteryId].isActive == false, "Battery ID exists.");
+        //require(batteries[_batteryId].isActive == false, "Battery ID exists.");
+        require(!doesBatteryExist(_batteryId), "Battery ID exists.");
         //require(bytes(_modelName).length > 0, "Invalid input parameters.");
         //require(_owner != address(0), "Invalid owner address.");
         
         batteries[_batteryId].batteryId = _batteryId;
         //batteries[_batteryId].owner = _owner;
-        batteries[_batteryId].creationDt = block.timestamp;
         batteries[_batteryId].modelName = _modelName;
         batteries[_batteryId].manufacturer = _manufacturer;
         batteries[_batteryId].productionDate = _productionDate;
-        batteries[_batteryId].isActive = true;
+        //batteries[_batteryId].isActive = true;
+        batteries[_batteryId].creationDt = block.timestamp;
 
         // ERC-721 : mint
         _mint(_owner, _batteryId);
@@ -122,19 +126,21 @@ contract BatteryOwnershipService is Initializable, ERC721, ERC721Enumerable, ERC
 		string memory _evaluationDate,
 		string memory _evaluationInstitute
     ) public onlyManager {
-        //require(batteries[_batteryId].isActive == true, "Battery does not exist.");
-        require(isBatteryExist(_batteryId), "Battery does not exist.");
+        require(doesBatteryExist(_batteryId), "Battery does not exist.");
         
-        batteries[_batteryId].certificateHash = _certificateHash;
-        batteries[_batteryId].certificateId = _certificateId;
+        //batteries[_batteryId].certificateHash = _certificateHash;
+        //batteries[_batteryId].certificateId = _certificateId;
+        batteries[_batteryId].currentCertificateId = _certificateId;
         
         certificates[_batteryId][_certificateId].batteryId = _batteryId;
         certificates[_batteryId][_certificateId].certificateId = _certificateId;
+        certificates[_batteryId][_certificateId].certificateHash = _certificateHash;
 	    certificates[_batteryId][_certificateId].grade = _grade;
         certificates[_batteryId][_certificateId].evaluationDate = _evaluationDate;
         certificates[_batteryId][_certificateId].evaluationInstitute = _evaluationInstitute;
 		certificates[_batteryId][_certificateId].grade = _grade;
         certificates[_batteryId][_certificateId].isLatest = true;
+        certificates[_batteryId][_certificateId].creationDt = block.timestamp;
         
 		for (uint i = 0;i < certificateList[_batteryId].length;i++) {
             if (certificates[_batteryId][certificateList[_batteryId][i]].isLatest == true)
@@ -146,10 +152,11 @@ contract BatteryOwnershipService is Initializable, ERC721, ERC721Enumerable, ERC
     }
     
     function validateCertificateHash(uint256 _batteryId, bytes32 _certificateHash) public view returns(bool)  {
-        //require(batteries[_batteryId].isActive == true, "Battery does not exist.");
-        require(isBatteryExist(_batteryId), "Battery does not exist.");
-        
-        return (batteries[_batteryId].certificateHash == _certificateHash);
+        require(doesBatteryExist(_batteryId), "Battery does not exist.");
+        require(certificates[_batteryId][batteries[_batteryId].currentCertificateId].creationDt != 0, "Certificate does not exist.");
+
+        //return (batteries[_batteryId].certificateHash == _certificateHash);
+        return (certificates[_batteryId][batteries[_batteryId].currentCertificateId].certificateHash == _certificateHash);
     }
     /*
     function transferOwnership(address _from, address _to, uint256 _batteryId) public onlyBatteryOwner(_batteryId) {
@@ -163,8 +170,7 @@ contract BatteryOwnershipService is Initializable, ERC721, ERC721Enumerable, ERC
     } 
     */
     function deleteOwnership(uint256 _batteryId) public onlyBatteryOwner(_batteryId) {
-        //require(batteries[_batteryId].isActive == true, "Battery does not exist.");
-        require(isBatteryExist(_batteryId), "Battery does not exist.");
+        require(doesBatteryExist(_batteryId), "Battery does not exist.");
         
         for (uint i = 0; i < certificateList[_batteryId].length; i++) {
             delete certificates[_batteryId][certificateList[_batteryId][i]];
@@ -185,16 +191,15 @@ contract BatteryOwnershipService is Initializable, ERC721, ERC721Enumerable, ERC
         returns (
             uint256 batteryId, 
             address owner, 
-            bytes32 certificateHash,
-            uint256 certificateId,
+            bytes32 currentCertificateHash,
+            uint256 currentCertificateId,
             uint256 creationDt,
             string memory modelName,
             string memory manufacturer,
             string memory productionDate
         )
     {
-        //require(batteries[_batteryId].isActive == true, "Battery does not exist.");
-        require(isBatteryExist(_batteryId), "Battery does not exist.");
+        require(doesBatteryExist(_batteryId), "Battery does not exist.");
 
         Battery memory battery = batteries[_batteryId];
 
@@ -202,8 +207,10 @@ contract BatteryOwnershipService is Initializable, ERC721, ERC721Enumerable, ERC
             battery.batteryId,
             //battery.owner,
             ownerOf(_batteryId),
-            battery.certificateHash,
-            battery.certificateId,
+            //battery.certificateHash,
+            certificates[_batteryId][battery.currentCertificateId].certificateHash,
+            //battery.certificateId,
+            battery.currentCertificateId,
             battery.creationDt,
             battery.modelName,
             battery.manufacturer,
@@ -222,7 +229,8 @@ contract BatteryOwnershipService is Initializable, ERC721, ERC721Enumerable, ERC
         view
         returns (
             uint256 batteryId, 
-            uint256 certificateId, 
+            uint256 certificateId,
+            bytes32 certificateHash,
             string memory grade,
             string memory evaluationDate,
             string memory evaluationInstitute,
@@ -230,15 +238,17 @@ contract BatteryOwnershipService is Initializable, ERC721, ERC721Enumerable, ERC
         )
     {
         //require(batteries[_batteryId].isActive == true, "Battery does not exist.");
-        require(isBatteryExist(_batteryId), "Battery does not exist.");
-        require(certificateList[_batteryId].length > 0, "Certificates do not exist.");
+        require(doesBatteryExist(_batteryId), "Battery does not exist.");
+        //require(certificateList[_batteryId].length > 0, "Certificates do not exist.");
         //require(batteries[_batteryId].certificateId != 0, "Certificate is not set.");
+        require(certificates[_batteryId][_certificateId].creationDt != 0, "Certificate does not exist.");
 
         Certificate memory certificate = certificates[_batteryId][_certificateId];
 
         return (
             certificate.batteryId,
             certificate.certificateId,
+            certificate.certificateHash,
             certificate.grade,
             certificate.evaluationDate,
             certificate.evaluationInstitute,
@@ -251,8 +261,9 @@ contract BatteryOwnershipService is Initializable, ERC721, ERC721Enumerable, ERC
         return (ownerOf(_batteryId) == _ownerAddress);
     }
     
-    function isBatteryExist(uint256 _batteryId) private view returns (bool) {
-        return (batteries[_batteryId].isActive == true);
+    function doesBatteryExist(uint256 _batteryId) private view returns (bool) {
+        //turn (batteries[_batteryId].isActive == true);
+        return (batteries[_batteryId].creationDt != 0);
     }
 
 }
