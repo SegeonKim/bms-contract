@@ -12,14 +12,10 @@ contract BatteryOwnershipService is Initializable, ERC721, ERC721Enumerable, ERC
     
     struct Battery {
         uint256 batteryId; 
-        //address owner; 
-        //bytes32 certificateHash;
-        //uint256 certificateId;
         uint256 currentCertificateId; 
         string modelName;
         string manufacturer;
         string productionDate;
-        //bool isActive;
         uint256 creationDt; 
     }
     
@@ -48,16 +44,11 @@ contract BatteryOwnershipService is Initializable, ERC721, ERC721Enumerable, ERC
         require(isBatteryOwner(_batteryId, msg.sender), "You are not battery owner.");
         _;
     }
-    /*
-    modifier batteryExists(uint256 _batteryId) {
-        require(batteries[_batteryId].isActive == true, "Battery does not exist.");
-        _;
-    }
-    */
+
     event CreateOwnership (
       address   indexed owner,
       uint256   batteryId,
-      //string    documentURI
+      //string    batteryURI
       string    modelName, 
       string    manufacturer, 
       string    productionDate
@@ -90,29 +81,24 @@ contract BatteryOwnershipService is Initializable, ERC721, ERC721Enumerable, ERC
     
     function createOwnership (
         uint256 _batteryId,
-        //string memory _documentURI 
+        //string memory _batteryURI 
         address _owner,
         string memory _modelName,
         string memory _manufacturer,
         string memory _productionDate
     ) public onlyManager {
-        //require(batteries[_batteryId].isActive == false, "Battery ID exists.");
         require(!doesBatteryExist(_batteryId), "Battery ID exists.");
-        //require(bytes(_modelName).length > 0, "Invalid input parameters.");
-        //require(_owner != address(0), "Invalid owner address.");
         
         batteries[_batteryId].batteryId = _batteryId;
-        //batteries[_batteryId].owner = _owner;
         batteries[_batteryId].modelName = _modelName;
         batteries[_batteryId].manufacturer = _manufacturer;
         batteries[_batteryId].productionDate = _productionDate;
-        //batteries[_batteryId].isActive = true;
         batteries[_batteryId].creationDt = block.timestamp;
 
         // ERC-721 : mint
         _mint(_owner, _batteryId);
-        //if(bytes(_documentURI).length > 0) {
-        //    _setTokenURI(_batteryId, _documentURI);
+        //if (bytes(_batteryURI).length > 0) {
+        //    _setTokenURI(_batteryId, _batteryURI);
         //}
         
         emit CreateOwnership(_owner, _batteryId, _modelName, _manufacturer, _productionDate);
@@ -128,8 +114,6 @@ contract BatteryOwnershipService is Initializable, ERC721, ERC721Enumerable, ERC
     ) public onlyManager {
         require(doesBatteryExist(_batteryId), "Battery does not exist.");
         
-        //batteries[_batteryId].certificateHash = _certificateHash;
-        //batteries[_batteryId].certificateId = _certificateId;
         batteries[_batteryId].currentCertificateId = _certificateId;
         
         certificates[_batteryId][_certificateId].batteryId = _batteryId;
@@ -155,20 +139,9 @@ contract BatteryOwnershipService is Initializable, ERC721, ERC721Enumerable, ERC
         require(doesBatteryExist(_batteryId), "Battery does not exist.");
         require(certificates[_batteryId][batteries[_batteryId].currentCertificateId].creationDt != 0, "Certificate does not exist.");
 
-        //return (batteries[_batteryId].certificateHash == _certificateHash);
         return (certificates[_batteryId][batteries[_batteryId].currentCertificateId].certificateHash == _certificateHash);
     }
-    /*
-    function transferOwnership(address _from, address _to, uint256 _batteryId) public onlyBatteryOwner(_batteryId) {
-        //require(batteries[_batteryId].isActive == true, "Battery does not exist.");
-        require(isBatteryExist(_batteryId), "Battery does not exist.");
-        
-        batteries[_batteryId].owner = _to;
-        
-        // ERC-721 : transfer
-        transferFrom(_from, _to, _batteryId);
-    } 
-    */
+
     function deleteOwnership(uint256 _batteryId) public onlyBatteryOwner(_batteryId) {
         require(doesBatteryExist(_batteryId), "Battery does not exist.");
         
@@ -205,11 +178,8 @@ contract BatteryOwnershipService is Initializable, ERC721, ERC721Enumerable, ERC
 
         return (
             battery.batteryId,
-            //battery.owner,
             ownerOf(_batteryId),
-            //battery.certificateHash,
             certificates[_batteryId][battery.currentCertificateId].certificateHash,
-            //battery.certificateId,
             battery.currentCertificateId,
             battery.creationDt,
             battery.modelName,
@@ -217,13 +187,7 @@ contract BatteryOwnershipService is Initializable, ERC721, ERC721Enumerable, ERC
             battery.productionDate
         );
     }
-    /*
-    function getCertificateCount(uint256 _batteryId) public view returns(uint) {
-        require(batteries[_batteryId].isActive == true, "Battery does not exist.");
-        
-        return certificateList[_batteryId].length;
-    }
-    */
+
     function getCertificateInfo(uint256 _batteryId, uint256 _certificateId)
         public
         view
@@ -237,10 +201,7 @@ contract BatteryOwnershipService is Initializable, ERC721, ERC721Enumerable, ERC
             bool isLatest
         )
     {
-        //require(batteries[_batteryId].isActive == true, "Battery does not exist.");
         require(doesBatteryExist(_batteryId), "Battery does not exist.");
-        //require(certificateList[_batteryId].length > 0, "Certificates do not exist.");
-        //require(batteries[_batteryId].certificateId != 0, "Certificate is not set.");
         require(certificates[_batteryId][_certificateId].creationDt != 0, "Certificate does not exist.");
 
         Certificate memory certificate = certificates[_batteryId][_certificateId];
@@ -257,12 +218,10 @@ contract BatteryOwnershipService is Initializable, ERC721, ERC721Enumerable, ERC
     }
     
     function isBatteryOwner(uint256 _batteryId, address _ownerAddress) public view returns (bool) {
-        //return (batteries[_batteryId].owner == _ownerAddress);
         return (ownerOf(_batteryId) == _ownerAddress);
     }
     
     function doesBatteryExist(uint256 _batteryId) private view returns (bool) {
-        //turn (batteries[_batteryId].isActive == true);
         return (batteries[_batteryId].creationDt != 0);
     }
 

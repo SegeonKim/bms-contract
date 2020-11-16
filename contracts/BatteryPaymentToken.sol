@@ -5,12 +5,6 @@ import "@openzeppelin/contracts-ethereum-package/contracts/ownership/Ownable.sol
 import "@openzeppelin/contracts-ethereum-package/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts-ethereum-package/contracts/token/ERC20/ERC20Detailed.sol";
 
-/**
- * @title BatteryPaymentToken
- * @dev Very basic ERC20 Token in TS, where all tokens are pre-assigned to the creator.
- * Note they can later distribute these tokens as they wish using `transfer` and other
- * `ERC20` functions.
- */
 contract BatteryPaymentToken is Initializable, ERC20, ERC20Detailed, Ownable {
 
     function initialize(string memory name, string memory symbol, uint256 initialSupply, address owner) public initializer {
